@@ -103,18 +103,25 @@ class ProductListPage:
 
     # Add a specific product to the wishlist
     def add_product_to_wishlist(self):
+        """Adds a specific product to the wishlist and returns product details."""
+        # Re-find the fiction_ex_book element to ensure it is fresh
         fiction_ex_book = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(self.fiction_ex_book)
         )
         fiction_ex_book.click()
 
+        # Wait for the wishlist button to be clickable again and interact with it
         wishlist_button = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(self.add_to_wishlist_btn)
         )
         wishlist_button.click()
 
+        # Re-query the product box to avoid stale element reference
+        product_box = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located(self.product_item)
+        )
+
         # Extract product details
-        product_box = fiction_ex_book.find_element(*self.product_item)
         product_id = product_box.get_attribute('data-productid')
         product_title = product_box.find_element(*self.product_title).text.strip()
         actual_price = product_box.find_element(*self.product_actual_price).text.strip()

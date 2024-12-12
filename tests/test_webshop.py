@@ -3,6 +3,8 @@ import json
 from pages.home_page import HomePage
 from pages.registration_page import RegistrationPage
 from pages.product_list_page import ProductListPage
+from pages.cart_page import CartPage
+from pages.checkout_page import CheckoutPage
 
 # Load test data from JSON file
 with open('test_data.json', 'r') as file:
@@ -97,3 +99,56 @@ def test_verify_sort_products_by_price(browser):
 
     # Verify the products are sorted by price in ascending order
     product_list_page.verify_sort_by_price()
+
+def test_verify_change_number_of_items_on_page(browser):
+    """
+    Verify that the customer can change the number of items displayed on the page.
+    """
+    # Initialize pages
+    home_page = HomePage(browser)
+    product_list_page = ProductListPage(browser)
+
+    # Navigate to the home page and click the Books group link
+    home_page.open()
+    books_group = browser.find_element(*home_page.books_group)
+    books_group.click()
+
+    # Verify that the number of items can be changed
+    product_list_page.change_number_of_items()
+
+def test_verify_add_product_to_wishlist(browser):
+    """
+    Verify that the customer can add a product to the wishlist.
+    """
+    # Initialize pages
+    home_page = HomePage(browser)
+    product_list_page = ProductListPage(browser)
+
+    # Navigate to the home page and click the Books group link
+    home_page.open()
+    books_group = browser.find_element(*home_page.books_group)
+    books_group.click()
+
+    # Verify that the wishlist button is visible
+    wishlist_button = browser.find_element(*home_page.wishlist_button)
+    assert wishlist_button.is_displayed(), "Wishlist button is not visible"
+
+    # Check the initial number of items in the wishlist
+    wishlist_quantity_text = browser.find_element(*home_page.wishlist_quantity).text
+    initial_wishlist_count = int(''.join(filter(str.isdigit, wishlist_quantity_text)))
+    assert initial_wishlist_count == 0, f"Expected 0 items in the wishlist, but found {initial_wishlist_count}"
+
+    # Add a product to the wishlist
+    product_list_page.add_product_to_wishlist()
+
+    # Verify the number of items in the wishlist after adding a product
+    wishlist_quantity_text_after = browser.find_element(*home_page.wishlist_quantity).text
+    updated_wishlist_count = int(''.join(filter(str.isdigit, wishlist_quantity_text_after)))
+    assert updated_wishlist_count == 1, f"Expected 1 item in the wishlist, but found {updated_wishlist_count}"
+
+    # Click the wishlist button
+    wishlist_button.click()
+
+    # Validate that the expected book title is present in the wishlist
+    expected_book_title = "Fiction EX"
+    product_list_page.validate_book_in_wishlist(expected_book_title)
