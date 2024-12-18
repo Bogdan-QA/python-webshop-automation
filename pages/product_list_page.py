@@ -92,9 +92,7 @@ class ProductListPage:
 
         # Click "Add to cart"
         first_product.find_element(*self.add_to_cart).click()
-        WebDriverWait(self.driver, 5).until(
-            EC.invisibility_of_element(first_product.find_element(*self.add_to_cart))
-        )
+
 
         return {
             "productId": product_id,

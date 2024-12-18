@@ -1,9 +1,15 @@
 import pytest
 import json
+import time
+
+from selenium.webdriver.support.wait import WebDriverWait
+
 from pages.home_page import HomePage
+from selenium.webdriver.support import expected_conditions as EC
 from pages.registration_page import RegistrationPage
 from pages.product_list_page import ProductListPage
 from pages.cart_page import CartPage
+
 from pages.checkout_page import CheckoutPage
 
 # Load test data from JSON file
@@ -146,3 +152,52 @@ def test_verify_add_product_to_wishlist(browser):
     updated_wishlist_count = int(''.join(filter(str.isdigit, wishlist_quantity_text_after)))
     assert updated_wishlist_count == 1, f"Expected 1 item in the wishlist, but found {updated_wishlist_count}"
 
+def test_verify_add_product_to_cart(browser):
+    """
+    Verify that the customer can add a product to the cart.
+    """
+    # Initialize pages
+    home_page = HomePage(browser)
+    product_list_page = ProductListPage(browser)
+    cart_page = CartPage(browser)
+
+    # Step 1: Navigate to the homepage and click the Books group
+    home_page.open()
+    books_group = browser.find_element(*home_page.books_group)
+    books_group.click()
+
+    # Step 2: Verify the cart button is visible
+    cart_button = browser.find_element(*home_page.cart_button)
+    assert cart_button.is_displayed(), "Cart button is not visible"
+
+    # Step 3: Verify the initial cart count is 0
+    initial_cart_text = browser.find_element(*home_page.cart_quantity).text
+    initial_cart_count = int(''.join(filter(str.isdigit, initial_cart_text)))
+    assert initial_cart_count == 0, f"Expected 0 items in the cart, but found {initial_cart_count}"
+
+    # Step 4: Add a product to the cart
+    added_product_details = product_list_page.add_product_to_cart()
+
+    # Step 5: Wait until the cart quantity updates to 1
+    WebDriverWait(browser, 10).until(
+        EC.text_to_be_present_in_element(home_page.cart_quantity, "1")
+    )
+
+    # Verify cart count is updated
+    cart_quantity_text_after = browser.find_element(*home_page.cart_quantity).text
+    updated_cart_count = int(''.join(filter(str.isdigit, cart_quantity_text_after)))
+    assert updated_cart_count == 1, f"Expected 1 item in the cart, but found {updated_cart_count}"
+
+    # Step 6: Click the cart button to navigate to the cart page
+    cart_button.click()
+
+    # Step 7: Retrieve product details from the cart
+    product_details_in_cart = cart_page.get_product_details()
+
+    # Step 8: Compare the product details with the added product
+    assert product_details_in_cart["productTitle"] == added_product_details["productTitle"], \
+        f"Expected product title '{added_product_details['productTitle']}' but got '{product_details_in_cart['productTitle']}'"
+    assert product_details_in_cart["productPrice"] == added_product_details["actualPrice"], \
+        f"Expected product price '{added_product_details['actualPrice']}' but got '{product_details_in_cart['productPrice']}'"
+    assert product_details_in_cart["productQty"] == 1, \
+        f"Expected product quantity '1' but got '{product_details_in_cart['productQty']}'"
