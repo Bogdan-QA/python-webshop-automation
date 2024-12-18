@@ -57,4 +57,4 @@ class CartPage:
         checkout_button = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(self.checkout_button)
         )
-        checkout_button.click()
+        self.checkout_button.click()

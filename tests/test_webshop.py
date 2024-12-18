@@ -1,14 +1,13 @@
 import pytest
 import json
 import time
-
 from selenium.webdriver.support.wait import WebDriverWait
-
 from pages.home_page import HomePage
 from selenium.webdriver.support import expected_conditions as EC
 from pages.registration_page import RegistrationPage
 from pages.product_list_page import ProductListPage
 from pages.cart_page import CartPage
+from pages.checkout_page import CheckoutPage
 
 from pages.checkout_page import CheckoutPage
 
@@ -201,3 +200,86 @@ def test_verify_add_product_to_cart(browser):
         f"Expected product price '{added_product_details['actualPrice']}' but got '{product_details_in_cart['productPrice']}'"
     assert product_details_in_cart["productQty"] == 1, \
         f"Expected product quantity '1' but got '{product_details_in_cart['productQty']}'"
+
+def test_verify_remove_product_from_cart(browser):
+    """
+    Verify that the customer can remove a product from the cart.
+    """
+    # Initialize pages
+    home_page = HomePage(browser)
+    product_list_page = ProductListPage(browser)
+    cart_page = CartPage(browser)
+
+    # Step 1: Navigate to the homepage and click the Books group
+    home_page.open()
+    books_group = browser.find_element(*home_page.books_group)
+    books_group.click()
+
+    # Step 2: Add a product to the cart
+    product_list_page.add_product_to_cart()
+
+    # Step 3: Click the cart button to navigate to the cart page
+    cart_button = browser.find_element(*home_page.cart_button)
+    cart_button.click()
+
+    # Step 4: Remove the product from the cart
+    cart_page.remove_product_from_cart()
+
+    # Step 5: Verify the cart quantity is updated to 0
+    WebDriverWait(browser, 10).until(
+        EC.text_to_be_present_in_element(home_page.cart_quantity, "0")
+    )
+
+    cart_quantity_text = browser.find_element(*home_page.cart_quantity).text
+    updated_cart_count = int(''.join(filter(str.isdigit, cart_quantity_text)))
+    assert updated_cart_count == 0, f"Expected 0 items in the cart, but found {updated_cart_count}"
+
+    # Step 6: Verify the empty cart message
+    empty_cart_message = WebDriverWait(browser, 10).until(
+        EC.visibility_of_element_located(cart_page.order_summary_message)
+    ).text.strip()
+    assert empty_cart_message == "Your Shopping Cart is empty!", \
+        f"Expected 'Your Shopping Cart is empty!', but got '{empty_cart_message}'"
+
+def test_verify_customer_checkout(browser):
+    """
+    Verify that the customer can successfully checkout a product.
+    """
+    # Initialize pages
+    home_page = HomePage(browser)
+    product_list_page = ProductListPage(browser)
+    cart_page = CartPage(browser)
+    checkout_page = CheckoutPage(browser)
+    registration_page = RegistrationPage(browser)
+
+    # Step 1: Navigate to the home page and login
+    home_page.open()
+    login_link = browser.find_element(*home_page.login_user)
+    login_link.click()
+
+    login_data = test_data["demoWebShopData"]["loginData"]
+    registration_page.login_user(email=login_data["email"], password=login_data["password"])
+
+    # Step 2: Click the Books group and add a product to the cart
+    books_group = browser.find_element(*home_page.books_group)
+    books_group.click()
+    added_product_details = product_list_page.add_product_to_cart()
+
+    # Step 3: Navigate to the cart and proceed to checkout
+    cart_button = browser.find_element(*home_page.cart_button)
+    cart_button.click()
+    cart_page.navigate_to_checkout()
+
+    # Step 4: Confirm all checkout steps
+    checkout_page.confirm_billing_address()
+    checkout_page.confirm_shipping_address()
+    checkout_page.confirm_shipping_method()
+    checkout_page.confirm_payment_method()
+    checkout_page.confirm_payment_information()
+    checkout_page.confirm_order()
+
+    # Step 5: Verify the order confirmation message
+    order_confirmation_message = checkout_page.get_order_confirmation_message()
+    expected_message = test_data["demoWebShopData"]["orderConfirmMessage"]
+    assert order_confirmation_message == expected_message, \
+        f"Expected '{expected_message}' but got '{order_confirmation_message}'"
