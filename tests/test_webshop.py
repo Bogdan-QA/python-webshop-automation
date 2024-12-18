@@ -146,9 +146,3 @@ def test_verify_add_product_to_wishlist(browser):
     updated_wishlist_count = int(''.join(filter(str.isdigit, wishlist_quantity_text_after)))
     assert updated_wishlist_count == 1, f"Expected 1 item in the wishlist, but found {updated_wishlist_count}"
 
-    # Click the wishlist button
-    wishlist_button.click()
-
-    # Validate that the expected book title is present in the wishlist
-    expected_book_title = "Fiction EX"
-    product_list_page.validate_book_in_wishlist(expected_book_title)

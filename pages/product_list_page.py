@@ -2,6 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
+import time
 
 
 class ProductListPage:
@@ -110,11 +111,23 @@ class ProductListPage:
         )
         fiction_ex_book.click()
 
-        # Wait for the wishlist button to be clickable again and interact with it
+        # Locate the "Add to Wishlist" button
         wishlist_button = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(self.add_to_wishlist_btn)
         )
-        wishlist_button.click()
+
+        # Scroll the button into view
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", wishlist_button)
+
+        # Try clicking the button using JavaScript
+        self.driver.execute_script("arguments[0].click();", wishlist_button)
+        print("Debug: Wishlist button clicked using JavaScript.")
+
+        # Wait for the wishlist count to update
+        WebDriverWait(self.driver, 10).until(
+            lambda driver: int(''.join(
+                filter(str.isdigit, driver.find_element(By.CSS_SELECTOR, '.ico-wishlist .wishlist-qty').text))) > 0
+        )
 
         # Re-query the product box to avoid stale element reference
         product_box = WebDriverWait(self.driver, 10).until(
